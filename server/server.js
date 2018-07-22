@@ -15,18 +15,37 @@ app.use(express.static(publicPath));
 io.on('connection', function (socket) {
     console.log('New user connected');
 
-     // from the server to the client
     socket.emit('newMessage', {
-        from: 'sendMessage@example.com',
-        text: 'Hi, this is dummy text I am sending a message',
-        createdAt: new Date()
+        from: 'Admin',
+        text: 'Welcome to the Chat Room!',
+        createdAt: new Date().getTime()
+    });
+
+    socket.broadcast.emit('newMessage', {
+        from: 'Admin',
+        text: 'New user joined',
+        createdAt: new Date().getTime()
     });
 
     socket.on('createMessage', (message) => {
         console.log('createMessage', message);
+        // io.emit emit emtis an event to every single connection
+        // sends the emit to anybody but this socket = when I send a message it will be fired to everyone but me
+        io.emit('newMessage', {
+            from: message.from,
+            text: message.text,
+            createdAt: new Date().getTime()
+        });
+        
+        // socket.broadcast.emit('newMessage', {
+        //         from: message.from,
+        //         text: message.text,
+        //         createdAt: new Date().getTime()
+        //     });
     });
 
-    socket.on('disconnect', function() {
+
+    socket.on('disconnect', function () {
         console.log('User was disconnected');
     })
 });
@@ -35,4 +54,4 @@ io.on('connection', function (socket) {
 
 server.listen(port, () => {
     console.log(`Server is up on port ${port}`);
-  });
+});
