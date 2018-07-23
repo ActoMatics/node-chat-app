@@ -4,6 +4,9 @@ const path = require('path'),
     http = require('http'),
     socketIO = require('socket.io');
 
+
+const {generateMessage} = require('./util/message');
+
 let app = express(),
     server = http.createServer(app),
     io = socketIO(server); // allow us to emit and submit events
@@ -15,35 +18,21 @@ app.use(express.static(publicPath));
 io.on('connection', function (socket) {
     console.log('New user connected');
 
-    socket.emit('newMessage', {
-        from: 'Admin',
-        text: 'Welcome to the Chat Room!',
-        createdAt: new Date().getTime()
-    });
+    socket.emit('newMessage', generateMessage('Admin', 'Welcome To This Awesome Chat Room!'));
 
-    socket.broadcast.emit('newMessage', {
-        from: 'Admin',
-        text: 'New user joined',
-        createdAt: new Date().getTime()
-    });
+    socket.broadcast.emit('newMessage',  generateMessage('Admin', 'New User Joined'));
 
-    socket.on('createMessage', (message) => {
+    // message sent from a user to a user
+    socket.on('createMessage', (message, callback) => {
         console.log('createMessage', message);
-        // io.emit emit emtis an event to every single connection
-        // sends the emit to anybody but this socket = when I send a message it will be fired to everyone but me
-        io.emit('newMessage', {
-            from: message.from,
-            text: message.text,
-            createdAt: new Date().getTime()
-        });
-        
+        io.emit('newMessage',  generateMessage(message.from, message.text));
+        callback('Message was received from server');
         // socket.broadcast.emit('newMessage', {
         //         from: message.from,
         //         text: message.text,
         //         createdAt: new Date().getTime()
         //     });
     });
-
 
     socket.on('disconnect', function () {
         console.log('User was disconnected');
