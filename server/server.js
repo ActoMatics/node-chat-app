@@ -5,7 +5,7 @@ const path = require('path'),
     socketIO = require('socket.io');
 
 
-const {generateMessage} = require('./util/message');
+const {generateMessage, generateLocationMessage} = require('./util/message');
 
 let app = express(),
     server = http.createServer(app),
@@ -26,12 +26,11 @@ io.on('connection', function (socket) {
     socket.on('createMessage', (message, callback) => {
         console.log('createMessage', message);
         io.emit('newMessage',  generateMessage(message.from, message.text));
-        callback('Message was received from server');
-        // socket.broadcast.emit('newMessage', {
-        //         from: message.from,
-        //         text: message.text,
-        //         createdAt: new Date().getTime()
-        //     });
+        callback();
+    });
+
+    socket.on('createLocationMessage', (coords) => {
+        io.emit('newLocationMessage', generateLocationMessage('admin', coords.latitude, coords.longitude));
     });
 
     socket.on('disconnect', function () {
