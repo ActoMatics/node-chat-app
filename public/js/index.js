@@ -10,26 +10,29 @@ socket.on('disconnect', () => {
 });
 
 socket.on('newMessage', function (message) {
-    console.log('Received a New message', message);
+    let formattedTime = moment(message.createdAt).format('h:mm a'),
+        template = jQuery('#message-template').html(),
+        html = Mustache.render(template, {
+            text: message.text,
+            from: message.from,
+            createdAt: formattedTime
+        });
 
-    let li = jQuery('<li></li>');
-    li.text(`${message.from}: ${message.text}`);
-
-    jQuery('#messages').append(li);
+    jQuery('#messages').append(html);
 });
 
 socket.on('newLocationMessage', function (message) {
-    let li = jQuery('<li></li>'),
-        a = jQuery('<a target="_blank">My Current Location</a>');
+    // adds a timestamp to location
+    let formattedTime = moment(message.createdAt).format('h:mm a'),
+        template = jQuery('#location-message-template').html(),
+        // render the htmp template
+        html = Mustache.render(template, {
+            from: message.from,
+            url: message.url,
+            createdAt: formattedTime
+        });
 
-    li.text(`${message.from}:`);
-    // set attribute 
-    a.attr('href', message.url);
-
-    li.append(a);
-    // add it to the DOM 
-    jQuery('#messages').append(li);
-
+    jQuery('#messages').append(html);
 });
 
 jQuery('#message-form').on('submit', function (e) {
@@ -40,7 +43,7 @@ jQuery('#message-form').on('submit', function (e) {
     socket.emit('createMessage', {
         from: 'User',
         text: messageTextBox.val()
-    }, function() {
+    }, function () {
         // clears the text field once a message was emitted
         messageTextBox.val('');
     });
@@ -51,12 +54,12 @@ let locationButton = jQuery('#send-location');
 
 // add click event
 locationButton.on('click', function () {
-    if(!navigator.geolocation) 
+    if (!navigator.geolocation)
         return alert('Geolocation not supported by your browser');
-    
+
     // disable button while sending location    
     locationButton.attr('disabled', 'disabled').text('Sending location')
-    
+
     navigator.geolocation.getCurrentPosition(function (position) {
         // re enable button once location sent
         locationButton.removeAttr('disabled').text('Send location');
@@ -68,5 +71,5 @@ locationButton.on('click', function () {
     }, function () {
         locationButton.removeAttr('disabled').text('Send location');
         alert('Unable to get location without your permission');
-    })    
+    })
 })
