@@ -4,8 +4,8 @@ const path = require('path'),
     http = require('http'),
     socketIO = require('socket.io');
 
-
-const {generateMessage, generateLocationMessage} = require('./util/message');
+const {generateMessage, generateLocationMessage} = require('./util/message'),
+    {isRealString} = require('./util/validation');
 
 let app = express(),
     server = http.createServer(app),
@@ -15,12 +15,29 @@ const port = process.env.PORT || 3000;
 
 app.use(express.static(publicPath));
 
+// io.emit - emits - emits to every connect user
+// socket.broadcast.emit - emits to every one connect to the server except for the current user
+// socket.emit - emits to a specific one user
+
 io.on('connection', function (socket) {
     console.log('New user connected');
 
-    socket.emit('newMessage', generateMessage('Admin', 'Welcome To This Awesome Chat Room!'));
+    socket.on('join', (params, callback) => {
 
-    socket.broadcast.emit('newMessage',  generateMessage('Admin', 'New User Joined'));
+        if(!isRealString(params.name) || !isRealString(params.room)) {
+            callback('Name and room name are required')
+        }
+
+        // join rooms, emit chat message to only people in the same room
+        socket.join(params.room);
+        // io.emit -> io.to.emit  -> send to everyone connected to the room
+        socket.emit('newMessage', generateMessage('Admin', 'Welcome To This Awesome Chat Room!'));
+
+        // socket.broadcast.emit -> socket.broadcast.to -> send to everyone in the room except for the current user
+        socket.broadcast.to(params.room.toLowerCase()).emit('newMessage', generateMessage('Admin', `${params.name} has joined the room`));
+
+        callback();
+    });
 
     // message sent from a user to a user
     socket.on('createMessage', (message, callback) => {

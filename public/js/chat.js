@@ -1,8 +1,35 @@
 let socket = io(); //creates the connection
 
-socket.on('connect', () => {
-    console.log('Connected to server');
+function scrollToBottom () {
+    // selectors
+    let messages = jQuery('#messages'),
+        newMessage = messages.children('li:last-child');
+    // Heights , prop = across all browsers allow to fetch a property
+    let clientHeight = messages.prop('clientHeight'),
+        scrollTop = messages.prop('scrollTop'),
+        scrollHeight = messages.prop('scrollHeight'),
+        newMessageHeight = newMessage.innerHeight(),
+        lastMessageHeight = newMessage.prev().innerHeight();
 
+        // calculate scroll
+        if(clientHeight + scrollTop + newMessageHeight + lastMessageHeight >= scrollHeight) {
+            messages.scrollTop(scrollHeight);
+        }
+}
+
+socket.on('connect', () => {
+    // converts the user login params
+    let params = jQuery.deparam(window.location.search);
+    // join chat
+    socket.emit('join', params, function (err) {
+        if(err) {
+            // re-direct user back to home page in case of an error
+            alert(err);
+            window.location.href = '/';
+        } else {
+            console.log('No Error on login');
+        }
+    });
 });
 
 socket.on('disconnect', () => {
@@ -19,6 +46,7 @@ socket.on('newMessage', function (message) {
         });
 
     jQuery('#messages').append(html);
+    scrollToBottom();
 });
 
 socket.on('newLocationMessage', function (message) {
@@ -33,6 +61,7 @@ socket.on('newLocationMessage', function (message) {
         });
 
     jQuery('#messages').append(html);
+    scrollToBottom();
 });
 
 jQuery('#message-form').on('submit', function (e) {
