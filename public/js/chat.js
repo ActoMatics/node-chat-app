@@ -34,11 +34,11 @@ socket.on('connect', () => {
 });
 
 socket.on('updateUserList', function (users) {
-   let ol = jQuery('<ol></ol>');
+   let ol = jQuery('<ol list-style:none></ol>');
 
    //updates the user list on the client side
    users.forEach(user => {
-       ol.append(jQuery('<li></li>').text(user));
+       ol.append(jQuery('<li list-style:none></li>').text(user));
    });
    // add list to the DOM. Not using append since we don't want to update the list, we want to
    // wipe the list replacing it with the new version
@@ -82,8 +82,8 @@ jQuery('#message-form').on('submit', function (e) {
     e.preventDefault();
 
     let messageTextBox = jQuery('[name="message"]');
+
     socket.emit('createMessage', {
-        from: 'User',
         text: messageTextBox.val()
     }, function () {
         // clears the text field once a message was emitted
