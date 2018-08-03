@@ -5,11 +5,13 @@ const path = require('path'),
     socketIO = require('socket.io');
 
 const {generateMessage, generateLocationMessage} = require('./util/message'),
-    {isRealString} = require('./util/validation');
+    {isRealString} = require('./util/validation'),
+    {Users} = require('./util/users');
 
 let app = express(),
     server = http.createServer(app),
-    io = socketIO(server); // allow us to emit and submit events
+    io = socketIO(server), // allow us to emit and submit events
+    users = new Users();
 
 const port = process.env.PORT || 3000;
 
@@ -25,11 +27,15 @@ io.on('connection', function (socket) {
     socket.on('join', (params, callback) => {
 
         if(!isRealString(params.name) || !isRealString(params.room)) {
-            callback('Name and room name are required')
+           return callback('Name and room name are required')
         }
 
         // join rooms, emit chat message to only people in the same room
         socket.join(params.room);
+        users.removeUser(socket.id);
+        users.addUser(socket.id, params.name, params.room);
+        // update users list with the users array. Emitting an event to everyone in the chat
+        io.to(params.room).emit('updateUserList', users.getUserList(params.room));
         // io.emit -> io.to.emit  -> send to everyone connected to the room
         socket.emit('newMessage', generateMessage('Admin', 'Welcome To This Awesome Chat Room!'));
 
@@ -51,7 +57,15 @@ io.on('connection', function (socket) {
     });
 
     socket.on('disconnect', function () {
-        console.log('User was disconnected');
+        let user = users.removeUser(socket.id);
+
+        if(user) {
+            // update user list if a user leaves the room
+            io.to(user.room ).emit('updateUserList', users.getUserList(user.room));
+            // print a message to inform user left the room
+            io.to(user.room).emit('newMessage', generateMessage('Admin', `${user.name} has left room`));
+        }
+        
     })
 });
 

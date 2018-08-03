@@ -1,3 +1,4 @@
+// Client side
 let socket = io(); //creates the connection
 
 function scrollToBottom () {
@@ -27,9 +28,21 @@ socket.on('connect', () => {
             alert(err);
             window.location.href = '/';
         } else {
-            console.log('No Error on login');
+          //  console.log('No Error on login');
         }
     });
+});
+
+socket.on('updateUserList', function (users) {
+   let ol = jQuery('<ol></ol>');
+
+   //updates the user list on the client side
+   users.forEach(user => {
+       ol.append(jQuery('<li></li>').text(user));
+   });
+   // add list to the DOM. Not using append since we don't want to update the list, we want to
+   // wipe the list replacing it with the new version
+   jQuery('#users').html(ol);
 });
 
 socket.on('disconnect', () => {
